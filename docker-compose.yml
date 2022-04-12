@@ -1,0 +1,64 @@
+services:
+  db:
+    image: postgres
+    volumes:
+      - psql_data:/var/lib/postgresql/data
+    expose:
+      - 5432
+    user: postgres
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 10s
+      retries: 3
+    networks:
+      - backend
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: 'rabbitmq'
+    ports:
+        - 5672:5672
+        - 15672:15672
+    volumes:
+        - rabbitmq_data:/var/lib/rabbitmq
+        - rabbitmq_log:/var/log/rabbitmq
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "localhost", "5672" ]
+      interval: 5s
+      timeout: 10s
+      retries: 3
+    networks:
+      - backend
+  
+  auth:
+    build: ./auth
+    restart: always
+    command: bash -c 'while !</dev/tcp/db/5432; do sleep 1; done; uvicorn app.main:app --host 0.0.0.0 --reload'
+    volumes:
+      - ./auth:/code
+    ports:
+      - 8008:8000
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/postgres
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      db: 
+        condition: service_healthy
+    networks:
+      - backend
+      
+
+volumes:
+  rabbitmq_data:
+  rabbitmq_log:
+  psql_data:
+  
+networks:
+  backend:
+    driver: bridge
