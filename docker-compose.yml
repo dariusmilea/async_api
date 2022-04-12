@@ -38,7 +38,7 @@ services:
   auth:
     build: ./auth
     restart: always
-    command: bash -c 'while !</dev/tcp/db/5432; do sleep 1; done; uvicorn app.main:app --host 0.0.0.0 --reload'
+    command: bash -c 'uvicorn app.main:app --host 0.0.0.0 --reload'
     volumes:
       - ./auth:/code
     ports:
