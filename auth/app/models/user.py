@@ -17,3 +17,12 @@ class UserReadOnly(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class UserEdit(BaseModel):
+    username: str | None = None
+    email: str | None = None
+    password: str | None = None
+
+    class Config:
+        orm_mode = True
