@@ -1,6 +1,7 @@
 services:
   db:
     image: postgres
+    container_name: 'postgres_database'
     volumes:
       - psql_data:/var/lib/postgresql/data
     expose:
@@ -11,7 +12,7 @@ services:
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=postgres
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 5s
       timeout: 10s
       retries: 3
@@ -22,11 +23,11 @@ services:
     image: rabbitmq:3-management-alpine
     container_name: 'rabbitmq'
     ports:
-        - 5672:5672
-        - 15672:15672
+      - 5672:5672
+      - 15672:15672
     volumes:
-        - rabbitmq_data:/var/lib/rabbitmq
-        - rabbitmq_log:/var/log/rabbitmq
+      - rabbitmq_data:/var/lib/rabbitmq
+      - rabbitmq_log:/var/log/rabbitmq
     healthcheck:
       test: [ "CMD", "nc", "-z", "localhost", "5672" ]
       interval: 5s
@@ -34,9 +35,10 @@ services:
       retries: 3
     networks:
       - backend
-  
+
   auth:
     build: ./auth
+    container_name: 'authenticator_service'
     restart: always
     command: bash -c 'uvicorn app.main:app --host 0.0.0.0 --reload'
     volumes:
@@ -45,20 +47,21 @@ services:
       - 8008:8000
     environment:
       - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/postgres
+      - SECRET_AUTH=8913b1236a49807ddbaf5292b45ebf7e
+      - ALGORITHM_AUTH=HS256
     depends_on:
       rabbitmq:
         condition: service_healthy
-      db: 
+      db:
         condition: service_healthy
     networks:
       - backend
-      
 
 volumes:
   rabbitmq_data:
   rabbitmq_log:
   psql_data:
-  
+
 networks:
   backend:
     driver: bridge
