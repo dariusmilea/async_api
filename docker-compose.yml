@@ -5,7 +5,9 @@ services:
     volumes:
       - psql_data:/var/lib/postgresql/data
     expose:
-      - 5432
+      - 5432   
+   #ports:
+   #  - "5432:5432"
     user: postgres
     environment:
       - POSTGRES_USER=postgres
